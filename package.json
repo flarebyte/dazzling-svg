@@ -17,10 +17,20 @@
     "svg"
   ],
   "dependencies": {
-    "meow": "^2.0.0"
+    "bluebird": "^2.9.13",
+    "chai": "^2.1.1",
+    "dazzling-path": "^0.1.0",
+    "lodash": "^3.3.1",
+    "meow": "^2.0.0",
+    "pretty-data": "^0.40.0",
+    "string": "^3.0.0",
+    "svgo": "^0.5.0",
+    "vinyl-fs": "^1.0.0",
+    "xml2js": "^0.4.5"
   },
   "devDependencies": {
     "browserify": "^7.0.0",
+    "chai": "^2.1.0",
     "grunt-bump": "^0.3.0",
     "grunt-cli": "^0.1.13",
     "grunt-contrib-jshint": "^0.10.0",
