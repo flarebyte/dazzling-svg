@@ -1,164 +1,168 @@
-(function() {
-    /*global describe, it */
-    'use strict';
-    var dazzlingSvg = require('../');
-    //var util = require('util');
-    var fs = require('fs');
-    //var _ = require('lodash');
-    var assert = require('chai').assert;
-    var pretty = require('pretty-data').pd;
+/*global describe, it */
+'use strict';
+var dazzlingSvg = require('../');
+//var util = require('util');
+var fs = require('fs');
+//var _ = require('lodash');
+var assert = require('chai').assert;
+var pretty = require('pretty-data').pd;
 
-    var WRITE_EXPECTED = false;
-
-
-    var UTF8 = {
-        "encoding": "utf8"
-    };
-
-    var readFixtureSvg = function(name) {
-        return fs.readFileSync("fixture/" + name + ".svg", UTF8);
-    };
-
-    var checkExpected = function(name, actual) {
-        if (WRITE_EXPECTED) {
-            fs.writeFileSync("expected/" + name, actual, UTF8);
-        }
-        var expected = fs.readFileSync("expected/" + name, UTF8);
-        assert.equal(actual, expected);
-        return expected;
-    };
-
-    var checkExpectedJson = function(name, actual) {
-        var json = JSON.stringify(actual, null, 2);
-        return checkExpected(name, json);
-    };
-
-    var checkExpectedSvg = function(name, actual) {
-        var svg = pretty.xml(actual);
-        return checkExpected(name, svg);
-    };
+var WRITE_EXPECTED = false;
 
 
-    describe('dazzling-svg node module', function() {
-        it('must parse a SVG file with layers and groups', function(done) {
-            var cfg = {
-                onError: done,
-                onAggregating: function(data) {
-                    checkExpectedJson("inkscape.layers.plain.json", data);
-                    done();
-                }
-            };
-            dazzlingSvg.processSvgAsync("fixture/inkscape.layers.plain.svg", cfg);
-        });
+var UTF8 = {
+    "encoding": "utf8"
+};
 
-        it('must parse a SVG file with an illustration', function(done) {
-            var cfg = {
-                onError: done,
-                onAggregating: function(data) {
-                    assert.equal(data.shapes.length, 276);
-                    checkExpectedJson("centurion.json", data);
-                    done();
-                }
-            };
-            dazzlingSvg.processSvgAsync("fixture/centurion.svg", cfg);
-        });
+var readFixtureSvg = function(name) {
+    return fs.readFileSync("fixture/" + name + ".svg", UTF8);
+};
 
-        it('must parse a SVG file with an illustration edited with Inkscape', function(done) {
-            var cfg = {
-                onError: done,
-                onAggregating: function(data) {
-                    checkExpectedJson("inkscape.centurion.json", data);
-                    done();
-                }
-            };
-            dazzlingSvg.processSvgAsync("fixture/inkscape.centurion.svg", cfg);
-        });
+var checkExpected = function(name, actual) {
+    if (WRITE_EXPECTED) {
+        fs.writeFileSync("expected/" + name, actual, UTF8);
+    }
+    var expected = fs.readFileSync("expected/" + name, UTF8);
+    assert.equal(actual, expected);
+    return expected;
+};
 
-        it('must parse a SVG file with layers edited with Inkscape', function(done) {
-            var cfg = {
-                onError: done,
-                onAggregating: function(data) {
-                    checkExpectedJson("inkscape.layers.json", data);
-                    done();
-                }
-            };
-            dazzlingSvg.processSvgAsync("fixture/inkscape.layers.svg", cfg);
-        });
+var checkExpectedJson = function(name, actual) {
+    var json = JSON.stringify(actual, null, 2);
+    return checkExpected(name, json);
+};
 
-        it('must parse a SVG file with many shapes', function(done) {
-            var cfg = {
-                onError: done,
-                onAggregating: function(data) {
-                    checkExpectedJson("inkscape.many-shapes.plain.json", data);
-                    done();
-                }
-            };
-            dazzlingSvg.processSvgAsync("fixture/inkscape.many-shapes.plain.svg", cfg);
-        });
+var checkExpectedSvg = function(name, actual) {
+    var svg = pretty.xml(actual);
+    return checkExpected(name, svg);
+};
 
-        it('must parse a SVG file with many shapes edited with Inkscape', function(done) {
-            var cfg = {
-                onError: done,
-                onAggregating: function(data) {
-                    checkExpectedJson("inkscape.many-shapes.json", data);
-                    done();
-                }
-            };
-            dazzlingSvg.processSvgAsync("fixture/inkscape.many-shapes.svg", cfg);
-        });
+describe('dazzling-svg node module', function() {
+    it('must have a version', function() {
+        assert.isDefined(dazzlingSvg.name, 'name should be defined');
+        assert.isDefined(dazzlingSvg.version, 'version should be defined');
+        assert.isDefined(dazzlingSvg.description, 'description should be defined');
+        console.log("Testing " + dazzlingSvg.name + " " + dazzlingSvg.version);
+    });
 
-        it('must optimize svg content with layers', function(done) {
-            var svgContent = readFixtureSvg("inkscape.layers.plain");
-
-            dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
-                if (err) {
-                    done(err);
-                }
-                checkExpectedSvg("inkscape.layers.plain.svg", optimized);
+    it('must parse a SVG file with layers and groups', function(done) {
+        var cfg = {
+            onError: done,
+            onAggregating: function(data) {
+                checkExpectedJson("inkscape.layers.plain.json", data);
                 done();
-            });
-        });
-        it('must optimize svg content with layers using promise', function(done) {
-            var svgContent = readFixtureSvg("inkscape.layers.plain");
-            dazzlingSvg.optimizeSvgAsync(svgContent).then(function(data) {
-                checkExpectedSvg("inkscape.layers.plain.async.svg", data);
-            }).then(done);
+            }
+        };
+        dazzlingSvg.processSvgAsync("fixture/inkscape.layers.plain.svg", cfg);
+    });
 
-        });
-        it('must optimize svg content from inskcape with layers', function(done) {
-            var svgContent = readFixtureSvg("inkscape.layers");
-
-            dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
-                if (err) {
-                    done(err);
-                }
-                checkExpectedSvg("inkscape.layers.svg", optimized);
+    it('must parse a SVG file with an illustration', function(done) {
+        var cfg = {
+            onError: done,
+            onAggregating: function(data) {
+                assert.equal(data.shapes.length, 276);
+                checkExpectedJson("centurion.json", data);
                 done();
-            });
-        });
-        it('must optimize svg content with centurion', function(done) {
-            var svgContent = readFixtureSvg("centurion");
+            }
+        };
+        dazzlingSvg.processSvgAsync("fixture/centurion.svg", cfg);
+    });
 
-            dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
-                if (err) {
-                    done(err);
-                }
-                checkExpectedSvg("centurion.svg", optimized);
+    it('must parse a SVG file with an illustration edited with Inkscape', function(done) {
+        var cfg = {
+            onError: done,
+            onAggregating: function(data) {
+                checkExpectedJson("inkscape.centurion.json", data);
                 done();
-            });
-        });
-        it('must optimize svg content from inkscape with centurion', function(done) {
-            var svgContent = readFixtureSvg("inkscape.centurion");
+            }
+        };
+        dazzlingSvg.processSvgAsync("fixture/inkscape.centurion.svg", cfg);
+    });
 
-            dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
-                if (err) {
-                    done(err);
-                }
-                checkExpectedSvg("inkscape.centurion.svg", optimized);
+    it('must parse a SVG file with layers edited with Inkscape', function(done) {
+        var cfg = {
+            onError: done,
+            onAggregating: function(data) {
+                checkExpectedJson("inkscape.layers.json", data);
                 done();
-            });
-        });
+            }
+        };
+        dazzlingSvg.processSvgAsync("fixture/inkscape.layers.svg", cfg);
+    });
 
+    it('must parse a SVG file with many shapes', function(done) {
+        var cfg = {
+            onError: done,
+            onAggregating: function(data) {
+                checkExpectedJson("inkscape.many-shapes.plain.json", data);
+                done();
+            }
+        };
+        dazzlingSvg.processSvgAsync("fixture/inkscape.many-shapes.plain.svg", cfg);
+    });
+
+    it('must parse a SVG file with many shapes edited with Inkscape', function(done) {
+        var cfg = {
+            onError: done,
+            onAggregating: function(data) {
+                checkExpectedJson("inkscape.many-shapes.json", data);
+                done();
+            }
+        };
+        dazzlingSvg.processSvgAsync("fixture/inkscape.many-shapes.svg", cfg);
+    });
+
+    it('must optimize svg content with layers', function(done) {
+        var svgContent = readFixtureSvg("inkscape.layers.plain");
+
+        dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
+            if (err) {
+                done(err);
+            }
+            checkExpectedSvg("inkscape.layers.plain.svg", optimized);
+            done();
+        });
+    });
+    it('must optimize svg content with layers using promise', function(done) {
+        var svgContent = readFixtureSvg("inkscape.layers.plain");
+        dazzlingSvg.optimizeSvgAsync(svgContent).then(function(data) {
+            checkExpectedSvg("inkscape.layers.plain.async.svg", data);
+        }).then(done);
 
     });
-}.call(this));
+    it('must optimize svg content from inskcape with layers', function(done) {
+        var svgContent = readFixtureSvg("inkscape.layers");
+
+        dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
+            if (err) {
+                done(err);
+            }
+            checkExpectedSvg("inkscape.layers.svg", optimized);
+            done();
+        });
+    });
+    it('must optimize svg content with centurion', function(done) {
+        var svgContent = readFixtureSvg("centurion");
+
+        dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
+            if (err) {
+                done(err);
+            }
+            checkExpectedSvg("centurion.svg", optimized);
+            done();
+        });
+    });
+    it('must optimize svg content from inkscape with centurion', function(done) {
+        var svgContent = readFixtureSvg("inkscape.centurion");
+
+        dazzlingSvg.optimizeSvg(svgContent, function(err, optimized) {
+            if (err) {
+                done(err);
+            }
+            checkExpectedSvg("inkscape.centurion.svg", optimized);
+            done();
+        });
+    });
+
+
+});
