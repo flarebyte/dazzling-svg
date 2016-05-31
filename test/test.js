@@ -46,14 +46,16 @@ describe('dazzling-svg node module', function() {
     });
 
     it('must parse a SVG file with layers and groups', function(done) {
-        var cfg = {
-            onError: done,
-            onAggregating: function(data) {
+        var cfg = {};
+        dazzlingSvg.readOptimizedSvgFileAsync("fixture/inkscape.layers.plain.svg")
+         	.then(dazzlingSvg.setConfigAsync(cfg))
+            .then(dazzlingSvg.processSvgAsync)
+            .then(function(data) {
+                console.log(data);
                 checkExpectedJson("inkscape.layers.plain.json", data);
                 done();
-            }
-        };
-        dazzlingSvg.processSvgAsync("fixture/inkscape.layers.plain.svg", cfg);
+            })
+            .catch(done);
     });
 
     it('must parse a SVG file with an illustration', function(done) {

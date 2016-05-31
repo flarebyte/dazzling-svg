@@ -5,13 +5,15 @@ var _ = require('lodash');
 var xml2js = require('xml2js');
 var fs = require('fs');
 var PromiseB = require("bluebird");
-var util = require('util');
 var SVGO = require('svgo');
 var assert = require('chai').assert;
 PromiseB.promisifyAll(fs);
 PromiseB.promisifyAll(xml2js);
 
 var optimizeSvg = function(content, callback) {
+    assert.isTrue(_.isString(content), "The svg content should be a string");
+    assert.isTrue(content.indexOf("<?xml") !== -1, "the content should have a svg element");
+
     var plugins = [{
             removeTitle: true
         }, {
@@ -124,15 +126,6 @@ var onTraversing = function(data) {
 };
 
 var defaultConfig = {
-    onError: function(e) {
-        console.error("*** onError: " + e);
-    },
-    onAggregating: function(data) {
-        console.log("*** onSuccess:" + util.inspect(data));
-    },
-    onFinally: function() {
-        console.log("*** onFinally:");
-    },
     onRectangle: function(aggreg, rectangle) {
         aggreg.shapes.push(rectangle);
     },
@@ -150,46 +143,58 @@ var defaultConfig = {
     },
     onGroup: function(aggreg, group) {
         return group;
-    },
-    onParseSvg: function(svg) {
-        assert.isDefined(svg, "svg content must exists");
-        return xml2js.parseStringAsync(svg);
-    },
-    onRead: function(filename) {
-        var content = fs.readFileAsync(filename, {
-            "encoding": "utf8"
-        });
-        return content;
-    },
-    onPostRead: function(svg) {
-        assert.isTrue(_.isString(svg), "The svg content should be a string");
-        assert.isTrue(svg.indexOf("<?xml") !== -1, "the content should have a svg element");
-        return optimizeSvgAsync(svg);
     }
 
 };
 
-var processSvgAsync = function(filename, cfg) {
-    var config = _.defaults(cfg, defaultConfig);
-    var onConfigTraversing = function(data) {
-        data["__"] = config;
-        var result = onTraversing(data);
-        delete result.__;
-        return result;
-    };
-    return config.onRead(filename)
-        .then(config.onPostRead)
-        .then(config.onParseSvg)
-        .then(onConfigTraversing)
-        .then(config.onAggregating)
-        .catch(config.onError)
-        .done();
+var readSvgFileAsync = function(filename) {
+    var content = fs.readFileAsync(filename, {
+        "encoding": "utf8"
+    });
+    return content;
 };
 
+var parseSvgAsync = function(svg) {
+    assert.isDefined(svg, "svg content must exists");
+    return xml2js.parseStringAsync(svg);
+};
+
+var readOptimizedSvgFileAsync = function(filename) {
+    return readSvgFileAsync(filename)
+        .then(optimizeSvgAsync)
+        .then(parseSvgAsync);
+};
+
+var setConfigAsync = function(cfg) {
+    var config = _.defaults(cfg, defaultConfig);
+
+    var p = PromiseB.promisify(function(data, callback) {
+        data["__"] = config;
+        callback(null,data);
+    });
+    return p;
+
+};
+
+var processSvgAsync = function() {
+    var p = PromiseB.promisify(function(data, callback) {
+        var result = onTraversing(data);
+        delete result.__;
+        callback(null, result);
+    });
+    return p;
+
+};
+
+
 module.exports = {
+    "readSvgFileAsync": readSvgFileAsync,
+    "readOptimizedSvgFileAsync": readOptimizedSvgFileAsync,
+    "setConfigAsync": setConfigAsync,
+    "parseSvgAsync": parseSvgAsync,
     "processSvgAsync": processSvgAsync,
     "optimizeSvg": optimizeSvg,
     "optimizeSvgAsync": optimizeSvgAsync
 };
 
-require('pkginfo')(module,'name', 'version', 'description');
+require('pkginfo')(module, 'name', 'version', 'description');
